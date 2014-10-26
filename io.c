@@ -66,15 +66,15 @@ int openDevice(char *device) {
 int opentty(char *device) {
 	int fd;
 
-	logIT(LOG_LOCAL0, "configure serial port %s",device);
+	logIT(LOG_DEBUG, "configure serial port %s",device);
 	if ((fd=open(device,O_RDWR)) < 0) {
 		logIT(LOG_ERR,"cannot open %s:%m",device);
 		exit(1);
 	}
-	logIT(LOG_LOCAL0, "serial port %s open",device);
+	logIT(LOG_DEBUG, "serial port %s open",device);
 	int s;
 	struct termios oldsb, newsb;
-	logIT(LOG_LOCAL0, "Loading current configuration",device);
+	logIT(LOG_DEBUG, "Loading current configuration",device);
 	s=tcgetattr(fd,&oldsb);
 
 	if (s<0) {
@@ -97,7 +97,7 @@ int opentty(char *device) {
 	newsb.c_cc[VMIN]   = 1;
 	newsb.c_cc[VTIME]  = 0;
 
-	logIT(LOG_LOCAL0, "Loading new configuration",device);
+	logIT(LOG_DEBUG, "Loading new configuration",device);
 	tcsetattr(fd, TCSADRAIN, &newsb);
 
 	/* DTR High fuer Spannungsversorgung */
@@ -110,7 +110,7 @@ int opentty(char *device) {
 		exit(1);
 	}
 
-	logIT(LOG_LOCAL0, "Serial port %s configured",device);
+	logIT(LOG_DEBUG, "Serial port %s configured",device);
 	return(fd);
 }
 
@@ -145,25 +145,29 @@ int receive(int fd,char *r_buf,int r_len,unsigned long *etime) {
 	clktck=sysconf(_SC_CLK_TCK);
 	start=times(&tms_t);
 	mid1=start;
+	logIT1(LOG_DEBUG, "io - recieve - 1 - start reading");
 	for(i=0;i<r_len;i++) {
-		if (signal(SIGALRM, sig_alrm) == SIG_ERR)
+		if (signal(SIGALRM, sig_alrm) == SIG_ERR){
 			logIT1(LOG_ERR,"SIGALRM error");
-			if(setjmp(env_alrm) !=0) {
-				logIT1(LOG_ERR,"read timeout");
-				return(-1);
-			}
-			alarm(TIMEOUT);
-			/* wir benutzen die Socket feste Vairante aus socket.c */
-			if (readn(fd,&r_buf[i],1) <= 0) {
-				logIT1(LOG_ERR,"error read tty");;
-				alarm(0);
-				return(-1);
-			}
+		}
+		logIT1(LOG_DEBUG, "io - recieve - 2 - setjmp");
+		if(setjmp(env_alrm) !=0) {
+			logIT1(LOG_ERR,"read timeout");
+			return(-1);
+		}
+		alarm(TIMEOUT);
+		/* wir benutzen die Socket feste Vairante aus socket.c */
+		logIT1(LOG_DEBUG, "io - recieve - 3 - reading");
+		if (readn(fd,&r_buf[i],1) <= 0) {
+			logIT1(LOG_ERR,"error read tty");;
 			alarm(0);
-			unsigned char byte=r_buf[i] & 255;
-			mid=times(&tms_t);
-			logIT(LOG_INFO,"<RECV: %02X (%0.1f ms)", byte,((float)(mid-mid1)/clktck)*1000);
-			mid1=mid;
+			return(-1);
+		}
+		alarm(0);
+		unsigned char byte=r_buf[i] & 255;
+		mid=times(&tms_t);
+		logIT(LOG_INFO,"<RECV: %02X (%0.1f ms)", byte,((float)(mid-mid1)/clktck)*1000);
+		mid1=mid;
 	}
 	end=times(&tms_t);
 	*etime=((float)(end-start)/clktck)*1000;
@@ -300,7 +304,7 @@ int waitfor(int fd, char *w_buf,int w_len) {
 		strncat(hexString,dummy,999);
 	}
 	
-	logIT(LOG_INFO,"Warte auf %s",hexString);
+	logIT(LOG_INFO,"Waiting for %s",hexString);
 	start=time(NULL);
 	
 	/* wir warten auf das erste Zeichen, danach muss es passen */
@@ -322,7 +326,7 @@ int waitfor(int fd, char *w_buf,int w_len) {
 			return(0);
 		}
 		if( r_buf[0] != w_buf[i]) {
-			logIT1(LOG_ERR,"Synchronisation verloren");
+			logIT1(LOG_ERR,"Lost synchronization");
 			exit(1);
 		}
         }		
