@@ -127,7 +127,10 @@ int my_send(int fd,char *s_buf, int len) {
 	tcflush(fd,TCIFLUSH);
 	
 	/* wir benutzen die Socket feste Vairante aus socket.c */
-	writen(fd,s_buf,len);
+	if(writen(fd,s_buf,len)!=len){
+		logIT1(LOG_ERR,"io - my_send - writen fail");
+		return (0);
+	}
 	for (i=0;i<len;i++) {
 		
 		unsigned char byte=s_buf[i] & 255;
