@@ -162,7 +162,7 @@ int execByteCode(compilePtr cmpPtr,int fd,char *recvBuf,short recvLen,
 			switch(cmpPtr->token) {
 			case WAIT:
 				if (!framer_waitfor(fd,cmpPtr->send,cmpPtr->len)) {
-					logIT1(LOG_ERR,"Fehler wait, Abbruch");
+					logIT1(LOG_ERR,"parser - execByteCode - WAIT : Wait error , abort");
 					return(-1);
 				}
 				bzero(string,sizeof(string));
@@ -172,7 +172,7 @@ int execByteCode(compilePtr cmpPtr,int fd,char *recvBuf,short recvLen,
 				break;
 			case SEND:
 				if (!framer_send(fd,cmpPtr->send,cmpPtr->len)) {
-					logIT1(LOG_ERR,"Fehler send, Abbruch");
+					logIT1(LOG_ERR,"parser - execByteCode - SEND : Wait error , abort");
 					return(-1);
 				}
 				if (iniFD && *simIn && *simOut) { /* wir haben schon was gesendet und empfangen, das geben wir nun aus */
@@ -309,19 +309,19 @@ int execCmd(char *cmd,int fd,char *recvBuf, int recvLen) {
 	switch (token) {
 		case WAIT:
 			if (!waitfor(fd,hex,hexlen)) {
-				logIT1(LOG_ERR,"Fehler wait, Abbruch");
+				logIT1(LOG_ERR,"parser - execCmd - WAIT : Wait error , abort");
 				return(-1);
 			}
 			break;
 		case SEND:
 			if (!my_send(fd,hex,hexlen)) {
-				logIT1(LOG_ERR,"Fehler send, Abbruch");
+				logIT1(LOG_ERR,"parser - execCmd - SEND : Wait error , abort");
 				exit(1);
 			}
 			break;
 		case RECV:
 			if (hexlen > recvLen) {
-				logIT(LOG_ERR,"Recv Buffer zu klein. Ist: %d Soll %d",recvLen,hexlen);
+				logIT(LOG_ERR,"parser - execCmd - Recv Buffer zu klein. Ist: %d Soll %dRecv Buffer too small . Is : %d ; target : %d",recvLen,hexlen);
 				hexlen=recvLen;
 			}	
 			etime=0;
