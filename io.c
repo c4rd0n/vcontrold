@@ -66,13 +66,15 @@ int openDevice(char *device) {
 int opentty(char *device) {
 	int fd;
 
-	logIT(LOG_LOCAL0, "konfiguriere serielle Schnittstelle %s",device);
+	logIT(LOG_LOCAL0, "configure serial port %s",device);
 	if ((fd=open(device,O_RDWR)) < 0) {
 		logIT(LOG_ERR,"cannot open %s:%m",device);
 		exit(1);
 	}
+	logIT(LOG_LOCAL0, "serial port %s open",device);
 	int s;
 	struct termios oldsb, newsb;
+	logIT(LOG_LOCAL0, "Loading current configuration",device);
 	s=tcgetattr(fd,&oldsb);
 
 	if (s<0) {
@@ -95,6 +97,7 @@ int opentty(char *device) {
 	newsb.c_cc[VMIN]   = 1;
 	newsb.c_cc[VTIME]  = 0;
 
+	logIT(LOG_LOCAL0, "Loading new configuration",device);
 	tcsetattr(fd, TCSADRAIN, &newsb);
 
 	/* DTR High fuer Spannungsversorgung */
@@ -107,6 +110,7 @@ int opentty(char *device) {
 		exit(1);
 	}
 
+	logIT(LOG_LOCAL0, "Serial port %s configured",device);
 	return(fd);
 }
 
